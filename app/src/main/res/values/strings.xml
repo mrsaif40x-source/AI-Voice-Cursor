@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">AI Voice Cursor</string>
+    <string name="accessibility_description">Lets AI Voice Cursor read the visible screen and perform the actions you ask for by voice (click, type, scroll). Everything runs on this device. Sensitive actions always ask for your confirmation.</string>
+</resources>

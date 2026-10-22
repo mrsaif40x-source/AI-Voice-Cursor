@@ -1,0 +1,19 @@
+# Gradle / Android
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# Model files must never be committed
+*.gguf
+*.bin
+*.safetensors
+*.task
+*.litertlm
+vosk-model*/
