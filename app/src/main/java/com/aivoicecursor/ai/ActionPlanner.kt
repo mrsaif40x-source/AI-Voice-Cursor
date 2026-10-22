@@ -5,22 +5,21 @@ import com.aivoicecursor.core.ActionPlan
 import com.aivoicecursor.core.ActionValidator
 import com.aivoicecursor.core.VoiceCommandParser
 
-/**
- * Command -> validated plan.
- * 1) local LLM (if loaded) with the compact screen summary, output parsed + validated;
- * 2) otherwise (or if the LLM output is rejected) the deterministic rule parser.
- */
-class ActionPlanner(private val llm: LocalLLMEngine?) {
+class ActionPlanner(private val llmEngine: LocalLLMEngine?) {
 
     suspend fun plan(command: String, screenSummary: String): Result<ActionPlan> {
         val cmd = command.trim()
         if (cmd.isEmpty()) return Result.failure(IllegalArgumentException("Empty command"))
 
+        val engine = llmEngine
         var note = ""
-        if (llm != null && llm.isModelLoaded()) {
-            val parsed = runCatching { llm.generate(PromptBuilder.build(cmd, screenSummary)) }
-                .mapCatching { ActionJsonParser.parse(it).getOrThrow() }
-                .mapCatching { ActionValidator.validate(it).getOrThrow() }
+        if (engine != null && engine.isModelLoaded()) {
+            val prompt = PromptBuilder.build(cmd, screenSummary)
+            val parsed: Result<ActionPlan> = try {
+                ActionJsonParser.parse(engine.generate(prompt)).mapCatching { ActionValidator.validate(it).getOrThrow() }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
             if (parsed.isSuccess) return parsed
             note = " (AI output rejected: ${parsed.exceptionOrNull()?.message})"
         }
@@ -29,7 +28,7 @@ class ActionPlanner(private val llm: LocalLLMEngine?) {
 
         return Result.failure(
             IllegalArgumentException(
-                if (llm != null && note.isEmpty())
+                if (engine != null && note.isEmpty())
                     "Command not understood. Install and load the local model for free-form commands."
                 else "Command not understood$note"
             )
